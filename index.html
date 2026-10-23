@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strip District Bar Crawl - Sat Oct 24</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b26; --panel2:#1d2432; --line:#2a3345;
+    --text:#eef2f8; --muted:#9aa7bd; --accent:#ffb454; --accent2:#ff6b6b;
+    --t1:#4ade80; --t2:#38bdf8; --t3:#c084fc; --late:#ffd166;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.45;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:0 14px 60px}
+  header.hero{padding:26px 0 14px}
+  .kicker{color:var(--accent);font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+  h1{font-size:27px;line-height:1.15;margin:6px 0 8px}
+  .sub{color:var(--muted);font-size:14px}
+  .sub b{color:var(--text)}
+  #map{height:340px;border-radius:14px;border:1px solid var(--line);margin:16px 0 8px;z-index:1}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--muted);margin-bottom:6px}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px;position:sticky;top:0;background:var(--bg);padding:10px 0;z-index:500}
+  .chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#1a1206}
+  h2{font-size:19px;margin:26px 0 10px;display:flex;align-items:center;gap:8px}
+  h2 .count{font-size:12px;color:var(--muted);font-weight:600}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin-bottom:10px}
+  .card .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+  .card h3{font-size:16px;display:flex;align-items:center;gap:8px}
+  .num{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:7px;font-size:12px;font-weight:800;color:#10131a}
+  .walk{font-size:12px;color:var(--muted);white-space:nowrap;font-weight:600}
+  .meta{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+  .pill{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:var(--muted)}
+  .pill.hrs{color:var(--late);border-color:#4a3d1e}
+  .pill.late{color:var(--accent2);border-color:#4e2626}
+  .pill.warn{color:#f8b4b4;border-color:#5a2e2e}
+  .vibe{font-size:13.5px;color:var(--muted);margin:4px 0 8px}
+  .row{font-size:13.5px;margin:5px 0;display:flex;gap:8px}
+  .row .lbl{color:var(--accent);font-weight:700;min-width:64px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;padding-top:1px}
+  .row .val{color:var(--text)}
+  .route{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 15px;margin-bottom:10px}
+  .stop{display:flex;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line)}
+  .stop:last-child{border-bottom:none}
+  .time{min-width:64px;font-weight:800;color:var(--accent);font-size:14px}
+  .stop .what b{font-size:14.5px}
+  .stop .what{font-size:13px;color:var(--muted)}
+  .stop .what b{color:var(--text)}
+  .btn{display:inline-block;background:var(--accent);color:#1a1206;font-weight:800;font-size:14px;border-radius:10px;padding:11px 18px;text-decoration:none;margin-top:12px}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+  .closed{background:#22161a;border:1px solid #4e2626;border-radius:14px;padding:14px 15px;margin-top:26px}
+  .closed h2{margin-top:0;color:#f8b4b4}
+  .closed li{font-size:13.5px;color:var(--muted);margin:6px 0 6px 18px}
+  .closed b{color:var(--text)}
+  .foot{margin-top:26px;font-size:12px;color:var(--muted)}
+  a{color:var(--accent)}
+  .leaflet-popup-content-wrapper{background:var(--panel2);color:var(--text);border-radius:10px}
+  .leaflet-popup-tip{background:var(--panel2)}
+  .leaflet-popup-content{font-size:13px}
+  .pin{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50% 50% 50% 4px;transform:rotate(-45deg);border:2px solid #0d1117;font-weight:800;font-size:12px;color:#10131a;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+  .pin span{transform:rotate(45deg)}
+  .home-pin{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--accent);border:2px solid #0d1117;font-size:15px;box-shadow:0 1px 6px rgba(0,0,0,.6)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div class="kicker">Pittsburgh &middot; Strip District</div>
+    <h1>Bar Crawl &mdash; Saturday, October 24</h1>
+    <div class="sub">Starting around <b>9:00 PM</b> from <b>2239 Railroad St</b>. 24 spots, all walking distance. Tap a pin or filter by tier.</div>
+  </header>
+
+  <div id="map"></div>
+  <div class="legend">
+    <span><span class="dot" style="background:var(--accent)"></span> Home</span>
+    <span><span class="dot" style="background:var(--t1)"></span> On your block (1-5 min)</span>
+    <span><span class="dot" style="background:var(--t2)"></span> Short walk (6-17 min)</span>
+    <span><span class="dot" style="background:var(--t3)"></span> Edge (20-25 min)</span>
+  </div>
+
+  <div class="filters" id="filters">
+    <button class="chip on" data-f="all">All 24</button>
+    <button class="chip" data-f="t1">On your block</button>
+    <button class="chip" data-f="t2">Short walk</button>
+    <button class="chip" data-f="t3">Edge of walking</button>
+    <button class="chip" data-f="late">Open past midnight</button>
+  </div>
+
+  <h2>Suggested route &mdash; 9 PM start</h2>
+  <div class="route" id="routeA"></div>
+  <a class="btn" id="gmaps" target="_blank" rel="noopener">Open route in Google Maps</a>
+  <a class="btn ghost" href="#allbars">See all 24 bars</a>
+
+  <h2 style="margin-top:30px">Plan B &mdash; east-first swing</h2>
+  <div class="route" id="routeB"></div>
+
+  <h2 id="allbars" style="margin-top:30px">Every bar, by walk time <span class="count" id="shown"></span></h2>
+  <div id="bars"></div>
+
+  <div class="closed">
+    <h2>Skip these &mdash; closed</h2>
+    <ul>
+      <li><b>Kingfly Spirits</b> &mdash; closed for good in 2025.</li>
+      <li><b>Savoy</b> (Penn Ave) &mdash; permanently closed.</li>
+      <li><b>Helltown Brewing</b> &mdash; Strip taproom closed Aug 30, 2026 (building being redeveloped).</li>
+      <li><b>Cellars Speakeasy</b> (Cadence+, 2400 Smallman) &mdash; closed May 2026.</li>
+      <li><b>Pittsburgh Winery</b> (2809 Penn) &mdash; closed summer 2026.</li>
+      <li><b>31st Street Pub</b> (3101 Penn) &mdash; long closed; old listings still float around.</li>
+    </ul>
+  </div>
+
+  <div class="foot">Hours &amp; specials verified from venue sites and listings on Oct 23-24, 2026. Walk times are estimates from 2239 Railroad St (Strip blocks run ~300 ft). Bubs' Lounge and Vieux Carr&eacute; don't publish exact Saturday hours &mdash; flagged on their cards.</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const HOME = {lat:40.4543905, lng:-79.9837955, label:"2239 Railroad St"};
+const BARS = [
+{n:1,name:"1930 Cigar Bar",addr:"2350 Railroad St",walk:1,tier:1,late:false,hrs:"Sat 11am-11pm",vibe:"Refined new cigar lounge from the Atria's / Juniper Grill family.",order:"Craft cocktails, the long bourbon list, premium cigars, shareable plates.",special:"",note:"Practically across the street. Expect a smoky room.",lat:40.4543788,lng:-79.9823946},
+{n:2,name:"Mullaney's Harp & Fiddle",addr:"2329 Penn Ave",walk:2,tier:1,late:true,hrs:"Sat 11am-1am",vibe:"Pittsburgh's Irish pub home since 1992; big whiskey list.",order:"Fish & chips with an Irish whiskey (Writer's Tears), soft pretzels, a proper Guinness.",special:"Live music Saturday nights; happy hour is a weekday thing (Fri 5-7:30).",note:"",lat:40.45347,lng:-79.981},
+{n:3,name:"Bar Marco",addr:"2216 Penn Ave",walk:3,tier:1,late:false,hrs:"Sat 10am-3pm & 5-11pm",vibe:"Intimate natural-wine and cocktail bar; no tipping, all included.",order:"Natural / small-production wines, craft cocktails, Italian small plates.",special:"",note:"$$$. Dinner reservations run till 9pm - book ahead for a table.",lat:40.45248,lng:-79.98155},
+{n:4,name:"Coop De Ville",addr:"2305 Smallman St",walk:3,tier:1,late:true,hrs:"Sat 11:30am-2am",vibe:"Huge arcade bar - duckpin bowling, pinball, tiki bar.",order:"Fried chicken, biscuits; champagne from the vending machine.",special:"",note:"Kitchen winds down around 9-10; games run all night.",lat:40.453779,lng:-79.982241},
+{n:5,name:"Vieux Carr\u00e9",addr:"inside Sea Monkey, 2305 Smallman St",walk:3,tier:1,late:true,hrs:"Sat evening (venue 5pm-2am)",vibe:"Hidden upscale reservation-only speakeasy, opened 2026.",order:"Creative craft cocktails - the whole point. $50+/person.",special:"",note:"Books on OpenTable - walk-ins are a gamble.",lat:40.45381,lng:-79.98230},
+{n:6,name:"Sea Monkey",addr:"2305 Smallman St",walk:3,tier:1,late:true,hrs:"Sat 5pm-2am (kitchen till 10)",vibe:"Chic Mediterranean-Asian restaurant and cocktail lounge.",order:"Shareable small plates built for passing around, plus the cocktail list.",special:"",note:"Restaurant seating till 10; lounge runs to 2am.",lat:40.45376,lng:-79.98224},
+{n:7,name:"Wigle Whiskey",addr:"2401 Smallman St",walk:4,tier:1,late:false,hrs:"Sat 10am-10pm (kitchen till 9)",vibe:"Pittsburgh's own distillery - cocktail bar in the barrel room.",order:"Orange Whiskey Sour, Peach Tea Rebellion, or a whiskey flight.",special:"Saturday distillery tours. (Happy hour is Wed-Fri + Sun, not Sat.)",note:"Closes at 10 - make this stop one.",lat:40.454384,lng:-79.981476},
+{n:8,name:"The BeerHive",addr:"2117 Penn Ave",walk:5,tier:1,late:true,hrs:"Sat 10am-12am",vibe:"Family-run beer bar, 100+ bottles and rotating taps.",order:"Strip District smash burgers (sourced within walking distance), wings.",special:"Weekday happy hour 5-7pm: $3.33 fried pickles, $5.98 wings, $1 off drafts (not a Saturday deal).",note:"",lat:40.4522,lng:-79.98282},
+{n:9,name:"Luke Wholey's Wild Alaskan Grille",addr:"2106 Penn Ave",walk:5,tier:1,late:false,hrs:"Sat 11am-10pm",vibe:"Seafood house with a proper bar, family-run.",order:"Hand-battered fish & chips, lobster bisque, sushi.",special:"",note:"Kitchen and bar wrap by 10.",lat:40.4519212,lng:-79.9828073},
+{n:10,name:"Cinderlands Warehouse",addr:"2601 Smallman St",walk:6,tier:2,late:false,hrs:"Sat 11:30am-11pm",vibe:"Big rustic-industrial brewery with a scratch kitchen and a 400-lb smoker.",order:"Squish hazy IPA, Tracks pilsner, anything off the smoker.",special:"Bocce, dome hockey and shuffleboard inside.",note:"",lat:40.45591,lng:-79.97927},
+{n:11,name:"Preeti's Pitt",addr:"2701 Penn Ave",walk:8,tier:2,late:false,hrs:"Sat 12-8pm",vibe:"Family comfort-food counter with a loyal following.",order:"Hot honey wings, homemade fried chicken, the salmon.",special:"",note:"Closes 8pm - afternoon stop only, not on a 9pm crawl.",lat:40.4560728,lng:-79.9768844},
+{n:12,name:"Bubs' Lounge",addr:"next to Preeti's Pitt, ~2701 Penn Ave",walk:8,tier:2,late:true,hrs:"Hours not published",vibe:"Brand-new hookah & cigar lounge (opened Apr 2026) honoring the owner's late son; full bar and food.",order:"Hookah, cigars, and food from the Preeti's kitchen next door.",special:"",note:"Too new for reliable hours - peek in if you pass it.",lat:40.45600,lng:-79.97695},
+{n:13,name:"The PA Market",addr:"108 19th St",walk:8,tier:2,late:true,hrs:"Sat 9am-12am",vibe:"Two-story market hall - Market Tavern below, Top Floor Bar & Wine Library above.",order:"Rotating local drafts at the Tavern; wine flights in the Library.",special:"Tavern happy hour is Wed-Fri 5-7 (half-off drafts) - not Saturday. Courtyard bar closed for the season.",note:"",lat:40.4508679,lng:-79.985031},
+{n:14,name:"Roland's Seafood Grill",addr:"1904 Penn Ave",walk:8,tier:2,late:false,hrs:"Sat 11am-10pm (Yelp lists bar to 12am)",vibe:"Strip District seafood landmark with an upstairs cocktail lounge.",order:"The famous hot lobster roll, lobster bisque, lobster mac & cheese.",special:"",note:"",lat:40.45062,lng:-79.98422},
+{n:15,name:"Cavo",addr:"1916 Smallman St",walk:8,tier:2,late:true,hrs:"Sat 9pm-2am",vibe:"The Strip's big nightclub - three rooms, Pittsburgh's DJ rotation.",order:"Bottle service and cocktails; you're here to dance.",special:"",note:"Expect a cover and a dress code.",lat:40.4515167,lng:-79.9849613},
+{n:16,name:"Aslin Beer Co.",addr:"1801 Smallman St",walk:10,tier:2,late:false,hrs:"Sat 10am-11pm",vibe:"Big, colorful 12,000 sq ft craft taproom at The Terminal.",order:"Hazy IPAs, fruited sours, pastry stouts; IZZI pizza inside.",special:"",note:"",lat:40.4509455,lng:-79.9862235},
+{n:17,name:"Art's Tavern",addr:"2852 Penn Ave",walk:11,tier:2,late:true,hrs:"Sat 3pm-12am",vibe:"40-year neighborhood dive, jukebox and patio.",order:"Two-for-one shots - strong, cheap drinks are the whole reputation.",special:"",note:"",lat:40.45765,lng:-79.97414},
+{n:18,name:"City Winery",addr:"1627 Smallman St",walk:13,tier:2,late:false,hrs:"Sat 11am-11pm",vibe:"Working winery, restaurant and concert venue in one.",order:"House-made wines by the glass, truffle fries, dip duo in the Barrel Room.",special:"",note:"Show nights can change access - check its calendar first.",lat:40.4499476,lng:-79.9879173},
+{n:19,name:"Real Luck Caf\u00e9 (Lucky's)",addr:"1519 Penn Ave",walk:15,tier:2,late:true,hrs:"Sat 3pm-2am",vibe:"Pittsburgh's classic gay dive bar, welcoming and cheap.",order:"Cheap strong drinks; DJs and go-go dancers upstairs late.",special:"",note:"It's a smoking bar.",lat:40.4487223,lng:-79.9882282},
+{n:20,name:"Maggie's Farm Barrelhouse",addr:"3212a Smallman St",walk:17,tier:2,late:false,hrs:"Sat 12-11pm",vibe:"Hidden rum-distillery cocktail lounge by the 31st St Bridge.",order:"Award-winning rum cocktails, tiki-style drinks, daiquiris.",special:"",note:"Easy to miss - it's the brick warehouse, look for the small sign.",lat:40.4615272,lng:-79.970132},
+{n:21,name:"Level 7 (AC Hotel)",addr:"1126 Smallman St",walk:22,tier:3,late:true,hrs:"Sat 5pm-12am",vibe:"Sleek hotel cocktail bar with a polished crowd.",order:"The Signature Gintonic or Smoked Manhattan; prosciutto and garlic-shrimp toasts.",special:"",note:"",lat:40.4456927,lng:-79.993616},
+{n:22,name:"Rick's Cabaret",addr:"135 9th St",walk:22,tier:3,late:true,hrs:"Sat 12pm-3am",vibe:"Strip club billed as a cabaret & sports bar.",order:"Bottle service.",special:"Half off admission with a same-day game ticket.",note:"21+, cover charge.",lat:40.4441665,lng:-79.9983272},
+{n:23,name:"Howl at the Moon",addr:"125 7th St",walk:25,tier:3,late:true,hrs:"Sat doors 6pm, show 8pm-2am",vibe:"Dueling-pianos party bar - loud, singalong, big groups.",order:"Shareable bucket drinks.",special:"Saturday happy-hour specials 6-9pm; free admission with online check-in.",note:"",lat:40.4438059,lng:-80.0003044},
+{n:24,name:"The Warren Bar & Burrow",addr:"245 7th St",walk:25,tier:3,late:true,hrs:"Sat 4pm-2am, kitchen till midnight",vibe:"Cocktail den by the Benedum, strong whiskey list.",order:"Whiskey-forward cocktails and late-night sushi - Flower Roll, Crazy Tuna Roll.",special:"",note:"No reservations.",lat:40.4427436,lng:-79.9997935}
+];
+const TIERCOL = {1:"#4ade80",2:"#38bdf8",3:"#c084fc"};
+
+// Map
+const map = L.map("map",{scrollWheelZoom:false}).setView([40.4512,-79.9825],15);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',maxZoom:19}).addTo(map);
+const markers = [];
+L.marker([HOME.lat,HOME.lng],{icon:L.divIcon({className:"",html:'<div class="home-pin">\ud83c\udfe0</div>',iconSize:[30,30],iconAnchor:[15,15]})}).addTo(map).bindPopup("<b>Home base</b><br>2239 Railroad St");
+BARS.forEach(b=>{
+  const m = L.marker([b.lat,b.lng],{icon:L.divIcon({className:"",html:'<div class="pin" style="background:'+TIERCOL[b.tier]+'"><span>'+b.n+'</span></div>',iconSize:[26,26],iconAnchor:[13,24]})})
+    .addTo(map)
+    .bindPopup("<b>"+b.n+". "+b.name+"</b><br>"+b.addr+"<br>"+b.hrs+" &middot; "+b.walk+" min walk");
+  m.on("click",()=>{const el=document.getElementById("bar-"+b.n); if(el){el.scrollIntoView({behavior:"smooth",block:"center"});}});
+  markers.push({m,b});
+});
+
+// Cards
+const barsEl = document.getElementById("bars");
+function card(b){
+  const latePill = b.late ? '<span class="pill late">open past 12am</span>' : '';
+  const warn = b.hrs.includes("not published") ? '<span class="pill warn">hours unverified</span>' : '';
+  return '<div class="card" id="bar-'+b.n+'" data-tier="'+b.tier+'" data-late="'+b.late+'">'
+    +'<div class="top"><h3><span class="num" style="background:'+TIERCOL[b.tier]+'">'+b.n+'</span> '+b.name+'</h3><span class="walk">'+b.walk+' min walk</span></div>'
+    +'<div class="meta"><span class="pill hrs">'+b.hrs+'</span>'+latePill+warn+'<span class="pill">'+b.addr+'</span></div>'
+    +'<div class="vibe">'+b.vibe+'</div>'
+    +'<div class="row"><span class="lbl">Order</span><span class="val">'+b.order+'</span></div>'
+    +(b.special?'<div class="row"><span class="lbl">Specials</span><span class="val">'+b.special+'</span></div>':'')
+    +(b.note?'<div class="row"><span class="lbl">Heads up</span><span class="val">'+b.note+'</span></div>':'')
+    +'</div>';
+}
+barsEl.innerHTML = BARS.map(card).join("");
+
+// Routes
+const routeA = [
+ ["9:00","Wigle Whiskey","Closes 10, so it goes first. Whiskey sour or a flight in the barrel room. 4 min from home."],
+ ["10:00","Bar Marco","Natural wine and cocktails till 11. Three-minute walk."],
+ ["11:00","The BeerHive","Smash burger + a rotating draft, open till midnight."],
+ ["11:45","Mullaney's Harp & Fiddle","Live music and an Irish whiskey, open till 1."],
+ ["12:30","Coop De Ville","Pinball and a nightcap till 2am - then a 3-minute walk home. Swap in Cavo (dancing), Sea Monkey / Vieux Carr\u00e9, or Lucky's if you want a different kind of late."]
+];
+const routeB = [
+ ["9:00","Maggie's Farm Barrelhouse","17 min east, closes 11 - rum cocktails while they last."],
+ ["10:30","Cinderlands Warehouse","Last call at 11 - one Squish IPA on the way back west."],
+ ["11:15","The BeerHive","Open till midnight."],
+ ["12:00","Mullaney's","Live music till 1."],
+ ["1:00","Coop De Ville","Till 2am, then 3 min home. (Trade-off: skips Wigle.)"]
+];
+function renderRoute(id, stops){
+  document.getElementById(id).innerHTML = stops.map(s=>'<div class="stop"><span class="time">'+s[0]+'</span><span class="what"><b>'+s[1]+'</b> &mdash; '+s[2]+'</span></div>').join("");
+}
+renderRoute("routeA",routeA);
+renderRoute("routeB",routeB);
+document.getElementById("gmaps").href = "https://www.google.com/maps/dir/?api=1&origin=2239+Railroad+St,+Pittsburgh,+PA+15222&destination=Coop+De+Ville,+2305+Smallman+St,+Pittsburgh,+PA+15222&waypoints=Wigle+Whiskey,+2401+Smallman+St,+Pittsburgh,+PA|Bar+Marco,+2216+Penn+Ave,+Pittsburgh,+PA|The+BeerHive,+2117+Penn+Ave,+Pittsburgh,+PA|Mullaney%27s+Harp+%26+Fiddle,+2329+Penn+Ave,+Pittsburgh,+PA&travelmode=walking";
+
+// Filters
+const shownEl = document.getElementById("shown");
+function applyFilter(f){
+  let c=0;
+  markers.forEach(({m,b})=>{
+    const show = f==="all" || (f==="late" ? b.late : b.tier===+f.slice(1));
+    if(show){ if(!map.hasLayer(m)) m.addTo(map); } else { if(map.hasLayer(m)) map.removeLayer(m); }
+  });
+  document.querySelectorAll("#bars .card").forEach(el=>{
+    const late = el.dataset.late==="true", tier = el.dataset.tier;
+    const show = f==="all" || (f==="late" ? late : tier===f.slice(1));
+    el.style.display = show ? "" : "none"; if(show) c++;
+  });
+  shownEl.textContent = "- showing "+c+" of "+BARS.length;
+}
+document.querySelectorAll(".chip").forEach(ch=>ch.addEventListener("click",()=>{
+  document.querySelectorAll(".chip").forEach(x=>x.classList.remove("on"));
+  ch.classList.add("on"); applyFilter(ch.dataset.f);
+}));
+applyFilter("all");
+</script>
+</body>
+</html>
