@@ -2,116 +2,181 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Strip District Bar Crawl - Sat Oct 24</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
   :root{
-    --bg:#0d1117; --panel:#161b26; --panel2:#1d2432; --line:#2a3345;
-    --text:#eef2f8; --muted:#9aa7bd; --accent:#ffb454; --accent2:#ff6b6b;
-    --t1:#4ade80; --t2:#38bdf8; --t3:#c084fc; --late:#ffd166;
+    --bg:#f5f6f8; --panel:#ffffff; --line:#e6e9ef;
+    --text:#161a21; --muted:#5d6675; --accent:#f0641e; --accent-soft:#fff1e8;
+    --t1:#16a34a; --t2:#0284c7;
+    --late:#be123c;
+    --shadow:0 10px 30px rgba(20,26,38,.10);
+    --ease:cubic-bezier(.32,.72,.28,1);
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.45;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:860px;margin:0 auto;padding:0 14px 60px}
-  header.hero{padding:26px 0 14px}
-  .kicker{color:var(--accent);font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
-  h1{font-size:27px;line-height:1.15;margin:6px 0 8px}
-  .sub{color:var(--muted);font-size:14px}
+  html,body{height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text);background:var(--bg);line-height:1.45;-webkit-font-smoothing:antialiased;overflow:hidden}
+  #map{position:fixed;inset:0;z-index:1;background:#eef1f4}
+
+  /* ---- floating sheet over the map ---- */
+  .sheet{
+    position:fixed;left:0;right:0;bottom:0;z-index:1000;
+    height:46dvh;
+    background:rgba(255,255,255,.88);
+    -webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);
+    border-radius:22px 22px 0 0;
+    box-shadow:0 -12px 40px rgba(20,26,38,.18);
+    transition:height .45s var(--ease);
+    display:flex;flex-direction:column;
+    border-top:1px solid rgba(255,255,255,.7);
+  }
+  .sheet.expanded{height:90dvh}
+  .sheet.dragging{transition:none}
+  .handle{flex:0 0 34px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none}
+  .handle:active{cursor:grabbing}
+  .handle span{width:44px;height:5px;border-radius:99px;background:#c9cfd9;transition:background .2s, transform .2s}
+  .handle:hover span{background:#aab2c0;transform:scaleX(1.15)}
+  .scroll{flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;padding:2px 16px 48px}
+
+  @media (min-width:900px){
+    .sheet{
+      top:18px;left:18px;bottom:18px;right:auto;width:432px;height:auto;
+      border-radius:22px;border:1px solid rgba(255,255,255,.7);
+      box-shadow:var(--shadow);
+    }
+    .sheet.expanded{height:auto}
+    .handle{display:none}
+    .scroll{padding:14px 20px 40px}
+  }
+
+  /* ---- content ---- */
+  .kicker{color:var(--accent);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;margin-top:10px}
+  h1{font-size:24px;line-height:1.15;margin:5px 0 6px;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:13.5px}
   .sub b{color:var(--text)}
-  #map{height:340px;border-radius:14px;border:1px solid var(--line);margin:16px 0 8px;z-index:1}
-  .legend{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--muted);margin-bottom:6px}
-  .legend span{display:inline-flex;align-items:center;gap:5px}
-  .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
-  .filters{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px;position:sticky;top:0;background:var(--bg);padding:10px 0;z-index:500}
-  .chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer}
-  .chip.on{background:var(--accent);border-color:var(--accent);color:#1a1206}
-  h2{font-size:19px;margin:26px 0 10px;display:flex;align-items:center;gap:8px}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--muted);margin:12px 0 2px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;box-shadow:0 0 0 3px rgba(0,0,0,.05)}
+
+  .filters{display:flex;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:20;
+    margin:10px -16px 4px;padding:10px 16px;
+    background:rgba(255,255,255,.78);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+  @media (min-width:900px){.filters{margin:10px -20px 4px;padding:10px 20px}}
+  .chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;
+    transition:background .25s var(--ease),color .25s var(--ease),border-color .25s var(--ease),transform .15s var(--ease),box-shadow .25s var(--ease)}
+  .chip:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(20,26,38,.08)}
+  .chip.on{background:var(--text);border-color:var(--text);color:#fff}
+
+  h2{font-size:17.5px;margin:24px 0 10px;letter-spacing:-.01em;display:flex;align-items:baseline;gap:8px}
   h2 .count{font-size:12px;color:var(--muted);font-weight:600}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin-bottom:10px}
+
+  @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 15px;margin-bottom:10px;
+    box-shadow:0 2px 8px rgba(20,26,38,.04);
+    animation:rise .55s var(--ease) both;
+    transition:box-shadow .25s var(--ease), transform .25s var(--ease)}
+  .card:hover{box-shadow:0 8px 22px rgba(20,26,38,.10);transform:translateY(-2px)}
+  @keyframes flash{0%{box-shadow:0 0 0 0 rgba(240,100,30,.55)}100%{box-shadow:0 0 0 16px rgba(240,100,30,0)}}
+  .card.flash{animation:flash 1.5s var(--ease)}
   .card .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
-  .card h3{font-size:16px;display:flex;align-items:center;gap:8px}
-  .num{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:7px;font-size:12px;font-weight:800;color:#10131a}
-  .walk{font-size:12px;color:var(--muted);white-space:nowrap;font-weight:600}
-  .meta{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
-  .pill{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:var(--muted)}
-  .pill.hrs{color:var(--late);border-color:#4a3d1e}
-  .pill.late{color:var(--accent2);border-color:#4e2626}
-  .pill.warn{color:#f8b4b4;border-color:#5a2e2e}
-  .vibe{font-size:13.5px;color:var(--muted);margin:4px 0 8px}
+  .card h3{font-size:15.5px;display:flex;align-items:center;gap:8px;letter-spacing:-.01em}
+  .num{display:inline-flex;align-items:center;justify-content:center;min-width:23px;height:23px;border-radius:8px;font-size:12px;font-weight:800;color:#fff;cursor:pointer;flex:0 0 auto;transition:transform .15s var(--ease)}
+  .num:hover{transform:scale(1.12)}
+  .walk{font-size:12px;color:var(--muted);white-space:nowrap;font-weight:700;padding-top:2px}
+  .meta{display:flex;flex-wrap:wrap;gap:6px;margin:9px 0 8px}
+  .pill{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:#f2f4f7;border:1px solid var(--line);color:var(--muted)}
+  .pill.hrs{color:#8a4b08;background:#fdf3e7;border-color:#f3ddc4}
+  .pill.late{color:var(--late);background:#fdf0f3;border-color:#f6d5de}
+  .pill.warn{color:#b42318;background:#fef3f2;border-color:#f5d2ce}
+  .vibe{font-size:13.5px;color:var(--muted);margin:2px 0 8px}
   .row{font-size:13.5px;margin:5px 0;display:flex;gap:8px}
-  .row .lbl{color:var(--accent);font-weight:700;min-width:64px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;padding-top:1px}
+  .row .lbl{color:var(--accent);font-weight:800;min-width:64px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding-top:2px}
   .row .val{color:var(--text)}
-  .route{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 15px;margin-bottom:10px}
-  .stop{display:flex;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line)}
+
+  .route{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:6px 15px;margin-bottom:10px;box-shadow:0 2px 8px rgba(20,26,38,.04);animation:rise .55s var(--ease) both}
+  .stop{display:flex;gap:12px;padding:11px 0;border-bottom:1px dashed var(--line)}
   .stop:last-child{border-bottom:none}
-  .time{min-width:64px;font-weight:800;color:var(--accent);font-size:14px}
-  .stop .what b{font-size:14.5px}
+  .time{min-width:46px;font-weight:800;color:var(--accent);font-size:13.5px;padding-top:1px}
   .stop .what{font-size:13px;color:var(--muted)}
-  .stop .what b{color:var(--text)}
-  .btn{display:inline-block;background:var(--accent);color:#1a1206;font-weight:800;font-size:14px;border-radius:10px;padding:11px 18px;text-decoration:none;margin-top:12px}
-  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
-  .closed{background:#22161a;border:1px solid #4e2626;border-radius:14px;padding:14px 15px;margin-top:26px}
-  .closed h2{margin-top:0;color:#f8b4b4}
-  .closed li{font-size:13.5px;color:var(--muted);margin:6px 0 6px 18px}
+  .stop .what b{color:var(--text);font-size:14px}
+
+  .btn{display:inline-block;background:var(--text);color:#fff;font-weight:800;font-size:13.5px;border-radius:12px;padding:11px 18px;text-decoration:none;margin:6px 8px 6px 0;transition:transform .15s var(--ease), box-shadow .25s var(--ease), background .25s}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(20,26,38,.18)}
+  .btn.ghost{background:var(--panel);border:1px solid var(--line);color:var(--text)}
+
+  .closed{background:#fdf6f5;border:1px solid #f0dcd8;border-radius:16px;padding:14px 15px;margin-top:26px;animation:rise .55s var(--ease) both}
+  .closed h2{margin-top:0;color:#b42318;font-size:15.5px}
+  .closed li{font-size:13px;color:var(--muted);margin:6px 0 6px 18px}
   .closed b{color:var(--text)}
-  .foot{margin-top:26px;font-size:12px;color:var(--muted)}
+  .foot{margin-top:24px;font-size:11.5px;color:var(--muted)}
   a{color:var(--accent)}
-  .leaflet-popup-content-wrapper{background:var(--panel2);color:var(--text);border-radius:10px}
-  .leaflet-popup-tip{background:var(--panel2)}
-  .leaflet-popup-content{font-size:13px}
-  .pin{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50% 50% 50% 4px;transform:rotate(-45deg);border:2px solid #0d1117;font-weight:800;font-size:12px;color:#10131a;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+
+  /* ---- map pins ---- */
+  @keyframes drop{from{opacity:0;transform:translateY(-26px)}to{opacity:1;transform:translateY(0)}}
+  .pinwrap{animation:drop .55s var(--ease) both}
+  .pin{display:flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:50% 50% 50% 4px;transform:rotate(-45deg);border:2px solid #fff;font-weight:800;font-size:12px;color:#fff;box-shadow:0 3px 8px rgba(20,26,38,.35);transition:transform .2s var(--ease)}
   .pin span{transform:rotate(45deg)}
-  .leaflet-tile-pane{filter:brightness(.7) invert(1) hue-rotate(190deg) saturate(2.2) brightness(.85)}
-  .home-pin{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--accent);border:2px solid #0d1117;font-size:15px;box-shadow:0 1px 6px rgba(0,0,0,.6)}
+  .pin:hover{transform:rotate(-45deg) scale(1.15)}
+  .home-pin{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--accent);border:2.5px solid #fff;font-size:15px;box-shadow:0 3px 10px rgba(20,26,38,.35)}
+  .leaflet-popup-content-wrapper{background:#fff;color:var(--text);border-radius:12px;box-shadow:0 10px 28px rgba(20,26,38,.2);animation:rise .3s var(--ease)}
+  .leaflet-popup-tip{background:#fff}
+  .leaflet-popup-content{font-size:13px;line-height:1.4}
+  .leaflet-control-zoom{border:none!important;box-shadow:var(--shadow)!important;border-radius:12px!important;overflow:hidden}
+  .leaflet-control-zoom a{border:none!important;color:var(--text)!important}
+  .leaflet-bar a{width:34px!important;height:34px!important;line-height:34px!important}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="hero">
-    <div class="kicker">Pittsburgh &middot; Strip District</div>
-    <h1>Bar Crawl &mdash; Saturday, October 24</h1>
-    <div class="sub">Starting around <b>9:00 PM</b> from <b>2239 Railroad St</b>. 15 spots, all walking distance. Tap a pin or filter by tier.</div>
-  </header>
+<div id="map"></div>
 
-  <div id="map"></div>
-  <div class="legend">
-    <span><span class="dot" style="background:var(--accent)"></span> Home</span>
-    <span><span class="dot" style="background:var(--t1)"></span> On your block (1-5 min)</span>
-    <span><span class="dot" style="background:var(--t2)"></span> Short walk (6-10 min)</span>
+<div class="sheet" id="sheet">
+  <div class="handle" id="handle"><span></span></div>
+  <div class="scroll" id="scroll">
+    <header>
+      <div class="kicker">Pittsburgh &middot; Strip District</div>
+      <h1>Bar Crawl - Saturday, October 24</h1>
+      <div class="sub">Starting around <b>9:00 PM</b> from <b>2239 Railroad St</b>. 15 spots, all walking distance. Tap a pin to jump to its card, tap a number badge to fly to its pin.</div>
+    </header>
+
+    <div class="legend">
+      <span><span class="dot" style="background:var(--accent)"></span> Home</span>
+      <span><span class="dot" style="background:var(--t1)"></span> On your block (1-5 min)</span>
+      <span><span class="dot" style="background:var(--t2)"></span> Short walk (6-10 min)</span>
+    </div>
+
+    <div class="filters" id="filters">
+      <button class="chip on" data-f="all">All 15</button>
+      <button class="chip" data-f="t1">On your block</button>
+      <button class="chip" data-f="t2">Short walk</button>
+      <button class="chip" data-f="late">Open past midnight</button>
+    </div>
+
+    <h2>Suggested route - 9 PM start</h2>
+    <div class="route" id="routeA"></div>
+    <a class="btn" id="gmaps" target="_blank" rel="noopener">Open route in Google Maps</a>
+    <a class="btn ghost" href="#allbars">See all 15 bars</a>
+
+    <h2 style="margin-top:26px">Plan B - east-first swing</h2>
+    <div class="route" id="routeB"></div>
+
+    <h2 id="allbars" style="margin-top:26px">Every bar, by walk time <span class="count" id="shown"></span></h2>
+    <div id="bars"></div>
+
+    <div class="closed">
+      <h2>Skip these - closed</h2>
+      <ul>
+        <li><b>Kingfly Spirits</b> - closed for good in 2025.</li>
+        <li><b>Savoy</b> (Penn Ave) - permanently closed.</li>
+        <li><b>Helltown Brewing</b> - Strip taproom closed Aug 30, 2026 (building being redeveloped).</li>
+        <li><b>Cellars Speakeasy</b> (Cadence+, 2400 Smallman) - closed May 2026.</li>
+        <li><b>Pittsburgh Winery</b> (2809 Penn) - closed summer 2026.</li>
+        <li><b>31st Street Pub</b> (3101 Penn) - long closed; old listings still float around.</li>
+      </ul>
+    </div>
+
+    <div class="foot">Hours &amp; specials verified from venue sites and listings on Oct 23-24, 2026. Walk times are estimates from 2239 Railroad St (Strip blocks run ~300 ft). Bubs' Lounge and Vieux Carr&eacute; don't publish exact Saturday hours - flagged on their cards. Map data &copy; OpenStreetMap contributors, &copy; CARTO.</div>
   </div>
-
-  <div class="filters" id="filters">
-    <button class="chip on" data-f="all">All 15</button>
-    <button class="chip" data-f="t1">On your block</button>
-    <button class="chip" data-f="t2">Short walk</button>
-    <button class="chip" data-f="late">Open past midnight</button>
-  </div>
-
-  <h2>Suggested route &mdash; 9 PM start</h2>
-  <div class="route" id="routeA"></div>
-  <a class="btn" id="gmaps" target="_blank" rel="noopener">Open route in Google Maps</a>
-  <a class="btn ghost" href="#allbars">See all 15 bars</a>
-
-  <h2 style="margin-top:30px">Plan B &mdash; east-first swing</h2>
-  <div class="route" id="routeB"></div>
-
-  <h2 id="allbars" style="margin-top:30px">Every bar, by walk time <span class="count" id="shown"></span></h2>
-  <div id="bars"></div>
-
-  <div class="closed">
-    <h2>Skip these &mdash; closed</h2>
-    <ul>
-      <li><b>Kingfly Spirits</b> &mdash; closed for good in 2025.</li>
-      <li><b>Savoy</b> (Penn Ave) &mdash; permanently closed.</li>
-      <li><b>Helltown Brewing</b> &mdash; Strip taproom closed Aug 30, 2026 (building being redeveloped).</li>
-      <li><b>Cellars Speakeasy</b> (Cadence+, 2400 Smallman) &mdash; closed May 2026.</li>
-      <li><b>Pittsburgh Winery</b> (2809 Penn) &mdash; closed summer 2026.</li>
-      <li><b>31st Street Pub</b> (3101 Penn) &mdash; long closed; old listings still float around.</li>
-    </ul>
-  </div>
-
-  <div class="foot">Hours &amp; specials verified from venue sites and listings on Oct 23-24, 2026. Walk times are estimates from 2239 Railroad St (Strip blocks run ~300 ft). Bubs' Lounge and Vieux Carr&eacute; don't publish exact Saturday hours &mdash; flagged on their cards.</div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -134,28 +199,39 @@ const BARS = [
 {n:14,name:"Roland's Seafood Grill",addr:"1904 Penn Ave",walk:8,tier:2,late:false,hrs:"Sat 11am-10pm (Yelp lists bar to 12am)",vibe:"Strip District seafood landmark with an upstairs cocktail lounge.",order:"The famous hot lobster roll, lobster bisque, lobster mac & cheese.",special:"",note:"",lat:40.45062,lng:-79.98422},
 {n:16,name:"Aslin Beer Co.",addr:"1801 Smallman St",walk:10,tier:2,late:false,hrs:"Sat 10am-11pm",vibe:"Big, colorful 12,000 sq ft craft taproom at The Terminal.",order:"Hazy IPAs, fruited sours, pastry stouts; IZZI pizza inside.",special:"",note:"",lat:40.4509455,lng:-79.9862235},
 ];
-const TIERCOL = {1:"#4ade80",2:"#38bdf8",3:"#c084fc"};
+const TIERCOL = {1:"#16a34a",2:"#0284c7"};
+const isDesktop = window.innerWidth >= 900;
 
-// Map
-const map = L.map("map",{scrollWheelZoom:false}).setView([40.4512,-79.9825],15);
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',maxZoom:19}).addTo(map);
+const map = L.map("map",{zoomControl:true,scrollWheelZoom:true});
+L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{
+  attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+  subdomains:"abcd", maxZoom:19
+}).addTo(map);
+
+const homeM = L.marker([HOME.lat,HOME.lng],{icon:L.divIcon({className:"",html:'<div class="pinwrap"><div class="home-pin">\ud83c\udfe0</div></div>',iconSize:[32,32],iconAnchor:[16,16]})}).addTo(map).bindPopup("<b>Home base</b><br>2239 Railroad St");
+
 const markers = [];
-L.marker([HOME.lat,HOME.lng],{icon:L.divIcon({className:"",html:'<div class="home-pin">\ud83c\udfe0</div>',iconSize:[30,30],iconAnchor:[15,15]})}).addTo(map).bindPopup("<b>Home base</b><br>2239 Railroad St");
-BARS.forEach(b=>{
-  const m = L.marker([b.lat,b.lng],{icon:L.divIcon({className:"",html:'<div class="pin" style="background:'+TIERCOL[b.tier]+'"><span>'+b.n+'</span></div>',iconSize:[26,26],iconAnchor:[13,24]})})
+BARS.forEach((b,i)=>{
+  const m = L.marker([b.lat,b.lng],{icon:L.divIcon({className:"",html:'<div class="pinwrap" style="animation-delay:'+(i*45)+'ms"><div class="pin" style="background:'+TIERCOL[b.tier]+'"><span>'+b.n+'</span></div></div>',iconSize:[27,27],iconAnchor:[13,25]})})
     .addTo(map)
     .bindPopup("<b>"+b.n+". "+b.name+"</b><br>"+b.addr+"<br>"+b.hrs+" &middot; "+b.walk+" min walk");
-  m.on("click",()=>{const el=document.getElementById("bar-"+b.n); if(el){el.scrollIntoView({behavior:"smooth",block:"center"});}});
+  m.on("click",()=>{
+    sheet.classList.add("expanded");
+    const el=document.getElementById("bar-"+b.n);
+    if(el){ el.scrollIntoView({behavior:"smooth",block:"center"}); el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
+  });
   markers.push({m,b});
 });
+const group = L.featureGroup(markers.map(x=>x.m).concat([homeM]));
+map.fitBounds(group.getBounds().pad(0.06), isDesktop ? {paddingTopLeft:[470,50],paddingBottomRight:[50,50]} : {paddingTopLeft:[24,24],paddingBottomRight:[24,Math.round(window.innerHeight*0.5)]});
 
 // Cards
 const barsEl = document.getElementById("bars");
-function card(b){
+function card(b,i){
   const latePill = b.late ? '<span class="pill late">open past 12am</span>' : '';
   const warn = b.hrs.includes("not published") ? '<span class="pill warn">hours unverified</span>' : '';
-  return '<div class="card" id="bar-'+b.n+'" data-tier="'+b.tier+'" data-late="'+b.late+'">'
-    +'<div class="top"><h3><span class="num" style="background:'+TIERCOL[b.tier]+'">'+b.n+'</span> '+b.name+'</h3><span class="walk">'+b.walk+' min walk</span></div>'
+  return '<div class="card" id="bar-'+b.n+'" data-tier="'+b.tier+'" data-late="'+b.late+'" style="animation-delay:'+(i*40)+'ms">'
+    +'<div class="top"><h3><span class="num" data-n="'+b.n+'" title="Show on map" style="background:'+TIERCOL[b.tier]+'">'+b.n+'</span> '+b.name+'</h3><span class="walk">'+b.walk+' min walk</span></div>'
     +'<div class="meta"><span class="pill hrs">'+b.hrs+'</span>'+latePill+warn+'<span class="pill">'+b.addr+'</span></div>'
     +'<div class="vibe">'+b.vibe+'</div>'
     +'<div class="row"><span class="lbl">Order</span><span class="val">'+b.order+'</span></div>'
@@ -164,6 +240,15 @@ function card(b){
     +'</div>';
 }
 barsEl.innerHTML = BARS.map(card).join("");
+barsEl.addEventListener("click",e=>{
+  const badge = e.target.closest(".num");
+  if(!badge) return;
+  const rec = markers.find(x=>x.b.n===+badge.dataset.n);
+  if(!rec) return;
+  if(!isDesktop) sheet.classList.remove("expanded");
+  map.flyTo([rec.b.lat,rec.b.lng],17,{duration:.9});
+  map.once("moveend",()=>rec.m.openPopup());
+});
 
 // Routes
 const routeA = [
@@ -180,7 +265,7 @@ const routeB = [
  ["12:00","Coop De Ville","Till 2am, then 3 min home. (Trade-off: skips Wigle.)"]
 ];
 function renderRoute(id, stops){
-  document.getElementById(id).innerHTML = stops.map(s=>'<div class="stop"><span class="time">'+s[0]+'</span><span class="what"><b>'+s[1]+'</b> &mdash; '+s[2]+'</span></div>').join("");
+  document.getElementById(id).innerHTML = stops.map(s=>'<div class="stop"><span class="time">'+s[0]+'</span><span class="what"><b>'+s[1]+'</b> - '+s[2]+'</span></div>').join("");
 }
 renderRoute("routeA",routeA);
 renderRoute("routeB",routeB);
@@ -206,6 +291,31 @@ document.querySelectorAll(".chip").forEach(ch=>ch.addEventListener("click",()=>{
   ch.classList.add("on"); applyFilter(ch.dataset.f);
 }));
 applyFilter("all");
+
+// Sheet drag + snap
+const sheet = document.getElementById("sheet");
+const handle = document.getElementById("handle");
+let dragging=false, startY=0, startH=0, moved=false;
+handle.addEventListener("pointerdown",e=>{
+  dragging=true; moved=false; startY=e.clientY; startH=sheet.getBoundingClientRect().height;
+  sheet.classList.add("dragging"); handle.setPointerCapture(e.pointerId);
+});
+handle.addEventListener("pointermove",e=>{
+  if(!dragging) return;
+  const dy = startY - e.clientY;
+  if(Math.abs(dy)>4) moved=true;
+  const h = Math.min(Math.max(startH+dy, window.innerHeight*0.18), window.innerHeight*0.92);
+  sheet.style.height = h+"px";
+});
+function endDrag(){
+  if(!dragging) return;
+  dragging=false; sheet.classList.remove("dragging");
+  const frac = sheet.getBoundingClientRect().height/window.innerHeight;
+  sheet.style.height = "";
+  sheet.classList.toggle("expanded", frac > 0.66);
+}
+handle.addEventListener("pointerup",endDrag);
+handle.addEventListener("pointercancel",endDrag);
 </script>
 </body>
 </html>
