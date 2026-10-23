@@ -71,19 +71,19 @@
   <header class="hero">
     <div class="kicker">Pittsburgh &middot; Strip District</div>
     <h1>Bar Crawl &mdash; Saturday, October 24</h1>
-    <div class="sub">Starting around <b>9:00 PM</b> from <b>2239 Railroad St</b>. 24 spots, all walking distance. Tap a pin or filter by tier.</div>
+    <div class="sub">Starting around <b>9:00 PM</b> from <b>2239 Railroad St</b>. 15 spots, all walking distance. Tap a pin or filter by tier.</div>
   </header>
 
   <div id="map"></div>
   <div class="legend">
     <span><span class="dot" style="background:var(--accent)"></span> Home</span>
     <span><span class="dot" style="background:var(--t1)"></span> On your block (1-5 min)</span>
-    <span><span class="dot" style="background:var(--t2)"></span> Short walk (6-17 min)</span>
+    <span><span class="dot" style="background:var(--t2)"></span> Short walk (6-10 min)</span>
     <span><span class="dot" style="background:var(--t3)"></span> Edge (20-25 min)</span>
   </div>
 
   <div class="filters" id="filters">
-    <button class="chip on" data-f="all">All 24</button>
+    <button class="chip on" data-f="all">All 15</button>
     <button class="chip" data-f="t1">On your block</button>
     <button class="chip" data-f="t2">Short walk</button>
     <button class="chip" data-f="t3">Edge of walking</button>
@@ -93,7 +93,7 @@
   <h2>Suggested route &mdash; 9 PM start</h2>
   <div class="route" id="routeA"></div>
   <a class="btn" id="gmaps" target="_blank" rel="noopener">Open route in Google Maps</a>
-  <a class="btn ghost" href="#allbars">See all 24 bars</a>
+  <a class="btn ghost" href="#allbars">See all 15 bars</a>
 
   <h2 style="margin-top:30px">Plan B &mdash; east-first swing</h2>
   <div class="route" id="routeB"></div>
@@ -134,16 +134,7 @@ const BARS = [
 {n:12,name:"Bubs' Lounge",addr:"next to Preeti's Pitt, ~2701 Penn Ave",walk:8,tier:2,late:true,hrs:"Hours not published",vibe:"Brand-new hookah & cigar lounge (opened Apr 2026) honoring the owner's late son; full bar and food.",order:"Hookah, cigars, and food from the Preeti's kitchen next door.",special:"",note:"Too new for reliable hours - peek in if you pass it.",lat:40.45600,lng:-79.97695},
 {n:13,name:"The PA Market",addr:"108 19th St",walk:8,tier:2,late:true,hrs:"Sat 9am-12am",vibe:"Two-story market hall - Market Tavern below, Top Floor Bar & Wine Library above.",order:"Rotating local drafts at the Tavern; wine flights in the Library.",special:"Tavern happy hour is Wed-Fri 5-7 (half-off drafts) - not Saturday. Courtyard bar closed for the season.",note:"",lat:40.4508679,lng:-79.985031},
 {n:14,name:"Roland's Seafood Grill",addr:"1904 Penn Ave",walk:8,tier:2,late:false,hrs:"Sat 11am-10pm (Yelp lists bar to 12am)",vibe:"Strip District seafood landmark with an upstairs cocktail lounge.",order:"The famous hot lobster roll, lobster bisque, lobster mac & cheese.",special:"",note:"",lat:40.45062,lng:-79.98422},
-{n:15,name:"Cavo",addr:"1916 Smallman St",walk:8,tier:2,late:true,hrs:"Sat 9pm-2am",vibe:"The Strip's big nightclub - three rooms, Pittsburgh's DJ rotation.",order:"Bottle service and cocktails; you're here to dance.",special:"",note:"Expect a cover and a dress code.",lat:40.4515167,lng:-79.9849613},
 {n:16,name:"Aslin Beer Co.",addr:"1801 Smallman St",walk:10,tier:2,late:false,hrs:"Sat 10am-11pm",vibe:"Big, colorful 12,000 sq ft craft taproom at The Terminal.",order:"Hazy IPAs, fruited sours, pastry stouts; IZZI pizza inside.",special:"",note:"",lat:40.4509455,lng:-79.9862235},
-{n:17,name:"Art's Tavern",addr:"2852 Penn Ave",walk:11,tier:2,late:true,hrs:"Sat 3pm-12am",vibe:"40-year neighborhood dive, jukebox and patio.",order:"Two-for-one shots - strong, cheap drinks are the whole reputation.",special:"",note:"",lat:40.45765,lng:-79.97414},
-{n:18,name:"City Winery",addr:"1627 Smallman St",walk:13,tier:2,late:false,hrs:"Sat 11am-11pm",vibe:"Working winery, restaurant and concert venue in one.",order:"House-made wines by the glass, truffle fries, dip duo in the Barrel Room.",special:"",note:"Show nights can change access - check its calendar first.",lat:40.4499476,lng:-79.9879173},
-{n:19,name:"Real Luck Caf\u00e9 (Lucky's)",addr:"1519 Penn Ave",walk:15,tier:2,late:true,hrs:"Sat 3pm-2am",vibe:"Pittsburgh's classic gay dive bar, welcoming and cheap.",order:"Cheap strong drinks; DJs and go-go dancers upstairs late.",special:"",note:"It's a smoking bar.",lat:40.4487223,lng:-79.9882282},
-{n:20,name:"Maggie's Farm Barrelhouse",addr:"3212a Smallman St",walk:17,tier:2,late:false,hrs:"Sat 12-11pm",vibe:"Hidden rum-distillery cocktail lounge by the 31st St Bridge.",order:"Award-winning rum cocktails, tiki-style drinks, daiquiris.",special:"",note:"Easy to miss - it's the brick warehouse, look for the small sign.",lat:40.4615272,lng:-79.970132},
-{n:21,name:"Level 7 (AC Hotel)",addr:"1126 Smallman St",walk:22,tier:3,late:true,hrs:"Sat 5pm-12am",vibe:"Sleek hotel cocktail bar with a polished crowd.",order:"The Signature Gintonic or Smoked Manhattan; prosciutto and garlic-shrimp toasts.",special:"",note:"",lat:40.4456927,lng:-79.993616},
-{n:22,name:"Rick's Cabaret",addr:"135 9th St",walk:22,tier:3,late:true,hrs:"Sat 12pm-3am",vibe:"Strip club billed as a cabaret & sports bar.",order:"Bottle service.",special:"Half off admission with a same-day game ticket.",note:"21+, cover charge.",lat:40.4441665,lng:-79.9983272},
-{n:23,name:"Howl at the Moon",addr:"125 7th St",walk:25,tier:3,late:true,hrs:"Sat doors 6pm, show 8pm-2am",vibe:"Dueling-pianos party bar - loud, singalong, big groups.",order:"Shareable bucket drinks.",special:"Saturday happy-hour specials 6-9pm; free admission with online check-in.",note:"",lat:40.4438059,lng:-80.0003044},
-{n:24,name:"The Warren Bar & Burrow",addr:"245 7th St",walk:25,tier:3,late:true,hrs:"Sat 4pm-2am, kitchen till midnight",vibe:"Cocktail den by the Benedum, strong whiskey list.",order:"Whiskey-forward cocktails and late-night sushi - Flower Roll, Crazy Tuna Roll.",special:"",note:"No reservations.",lat:40.4427436,lng:-79.9997935}
 ];
 const TIERCOL = {1:"#4ade80",2:"#38bdf8",3:"#c084fc"};
 
@@ -182,14 +173,13 @@ const routeA = [
  ["10:00","Bar Marco","Natural wine and cocktails till 11. Three-minute walk."],
  ["11:00","The BeerHive","Smash burger + a rotating draft, open till midnight."],
  ["11:45","Mullaney's Harp & Fiddle","Live music and an Irish whiskey, open till 1."],
- ["12:30","Coop De Ville","Pinball and a nightcap till 2am - then a 3-minute walk home. Swap in Cavo (dancing), Sea Monkey / Vieux Carr\u00e9, or Lucky's if you want a different kind of late."]
+ ["12:30","Coop De Ville","Pinball and a nightcap till 2am - then a 3-minute walk home. Sea Monkey / Vieux Carr\u00e9 are nearby late-night alternatives."]
 ];
 const routeB = [
- ["9:00","Maggie's Farm Barrelhouse","17 min east, closes 11 - rum cocktails while they last."],
- ["10:30","Cinderlands Warehouse","Last call at 11 - one Squish IPA on the way back west."],
- ["11:15","The BeerHive","Open till midnight."],
- ["12:00","Mullaney's","Live music till 1."],
- ["1:00","Coop De Ville","Till 2am, then 3 min home. (Trade-off: skips Wigle.)"]
+ ["9:00","Cinderlands Warehouse","Six minutes east, closes 11 - one Squish IPA on the way back west."],
+ ["10:00","The BeerHive","Open till midnight."],
+ ["11:00","Mullaney's","Live music till 1."],
+ ["12:00","Coop De Ville","Till 2am, then 3 min home. (Trade-off: skips Wigle.)"]
 ];
 function renderRoute(id, stops){
   document.getElementById(id).innerHTML = stops.map(s=>'<div class="stop"><span class="time">'+s[0]+'</span><span class="what"><b>'+s[1]+'</b> &mdash; '+s[2]+'</span></div>').join("");
