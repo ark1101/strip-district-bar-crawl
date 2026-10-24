@@ -136,11 +136,11 @@
     <header>
       <div class="kicker">Pittsburgh &middot; Strip District</div>
       <h1>Bar Crawl - Saturday, October 24</h1>
-      <div class="sub">Starting around <b>9:00 PM</b> from <b>2239 Railroad St</b>. 15 spots, all walking distance. Tap a pin to jump to its card, tap a number badge to fly to its pin.</div>
+      <div class="sub">Starting around <b>9:00 PM</b> in the Strip District. 15 spots, all walking distance. Tap a pin to jump to its card, tap a number badge to fly to its pin.</div>
     </header>
 
     <div class="legend">
-      <span><span class="dot" style="background:var(--accent)"></span> Home</span>
+      
       <span><span class="dot" style="background:var(--t1)"></span> On your block (1-5 min)</span>
       <span><span class="dot" style="background:var(--t2)"></span> Short walk (6-10 min)</span>
     </div>
@@ -175,13 +175,12 @@
       </ul>
     </div>
 
-    <div class="foot">Hours &amp; specials verified from venue sites and listings on Oct 23-24, 2026. Walk times are estimates from 2239 Railroad St (Strip blocks run ~300 ft). Bubs' Lounge and Vieux Carr&eacute; don't publish exact Saturday hours - flagged on their cards. Map data &copy; OpenStreetMap contributors.</div>
+    <div class="foot">Hours &amp; specials verified from venue sites and listings on Oct 23-24, 2026. Walk times are estimates from the Strip District (Strip blocks run ~300 ft). Bubs' Lounge and Vieux Carr&eacute; don't publish exact Saturday hours - flagged on their cards. Map data &copy; OpenStreetMap contributors.</div>
   </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const HOME = {lat:40.4543905, lng:-79.9837955, label:"2239 Railroad St"};
 const BARS = [
 {n:1,name:"1930 Cigar Bar",addr:"2350 Railroad St",walk:1,tier:1,late:false,hrs:"Sat 11am-11pm",vibe:"Refined new cigar lounge from the Atria's / Juniper Grill family.",order:"Craft cocktails, the long bourbon list, premium cigars, shareable plates.",special:"",note:"Practically across the street. Expect a smoky room.",lat:40.4543788,lng:-79.9823946},
 {n:2,name:"Mullaney's Harp & Fiddle",addr:"2329 Penn Ave",walk:2,tier:1,late:true,hrs:"Sat 11am-1am",vibe:"Pittsburgh's Irish pub home since 1992; big whiskey list.",order:"Fish & chips with an Irish whiskey (Writer's Tears), soft pretzels, a proper Guinness.",special:"Live music Saturday nights; happy hour is a weekday thing (Fri 5-7:30).",note:"",lat:40.45347,lng:-79.981},
@@ -208,7 +207,6 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
   maxZoom:19
 }).addTo(map);
 
-const homeM = L.marker([HOME.lat,HOME.lng],{icon:L.divIcon({className:"",html:'<div class="pinwrap"><div class="home-pin">\ud83c\udfe0</div></div>',iconSize:[32,32],iconAnchor:[16,16]})}).addTo(map).bindPopup("<b>Home base</b><br>2239 Railroad St");
 
 const markers = [];
 BARS.forEach((b,i)=>{
@@ -222,7 +220,7 @@ BARS.forEach((b,i)=>{
   });
   markers.push({m,b});
 });
-const group = L.featureGroup(markers.map(x=>x.m).concat([homeM]));
+const group = L.featureGroup(markers.map(x=>x.m));
 map.fitBounds(group.getBounds().pad(0.06), isDesktop ? {paddingTopLeft:[470,50],paddingBottomRight:[50,50]} : {paddingTopLeft:[24,24],paddingBottomRight:[24,Math.round(window.innerHeight*0.5)]});
 
 // Cards
@@ -252,24 +250,24 @@ barsEl.addEventListener("click",e=>{
 
 // Routes
 const routeA = [
- ["9:00","Wigle Whiskey","Closes 10, so it goes first. Whiskey sour or a flight in the barrel room. 4 min from home."],
+ ["9:00","Wigle Whiskey","Closes 10, so it goes first. Whiskey sour or a flight in the barrel room. 4 min from the starting area."],
  ["10:00","Bar Marco","Natural wine and cocktails till 11. Three-minute walk."],
  ["11:00","The BeerHive","Smash burger + a rotating draft, open till midnight."],
  ["11:45","Mullaney's Harp & Fiddle","Live music and an Irish whiskey, open till 1."],
- ["12:30","Coop De Ville","Pinball and a nightcap till 2am - then a 3-minute walk home. Sea Monkey / Vieux Carr\u00e9 are nearby late-night alternatives."]
+ ["12:30","Coop De Ville","Pinball and a nightcap till 2am - then a 3-minute walk back to the Strip District. Sea Monkey / Vieux Carr\u00e9 are nearby late-night alternatives."]
 ];
 const routeB = [
  ["9:00","Cinderlands Warehouse","Six minutes east, closes 11 - one Squish IPA on the way back west."],
  ["10:00","The BeerHive","Open till midnight."],
  ["11:00","Mullaney's","Live music till 1."],
- ["12:00","Coop De Ville","Till 2am, then 3 min home. (Trade-off: skips Wigle.)"]
+ ["12:00","Coop De Ville","Till 2am, then 3 min back to the Strip District. (Trade-off: skips Wigle.)"]
 ];
 function renderRoute(id, stops){
   document.getElementById(id).innerHTML = stops.map(s=>'<div class="stop"><span class="time">'+s[0]+'</span><span class="what"><b>'+s[1]+'</b> - '+s[2]+'</span></div>').join("");
 }
 renderRoute("routeA",routeA);
 renderRoute("routeB",routeB);
-document.getElementById("gmaps").href = "https://www.google.com/maps/dir/?api=1&origin=2239+Railroad+St,+Pittsburgh,+PA+15222&destination=Coop+De+Ville,+2305+Smallman+St,+Pittsburgh,+PA+15222&waypoints=Wigle+Whiskey,+2401+Smallman+St,+Pittsburgh,+PA|Bar+Marco,+2216+Penn+Ave,+Pittsburgh,+PA|The+BeerHive,+2117+Penn+Ave,+Pittsburgh,+PA|Mullaney%27s+Harp+%26+Fiddle,+2329+Penn+Ave,+Pittsburgh,+PA&travelmode=walking";
+document.getElementById("gmaps").href = "https://www.google.com/maps/dir/?api=1&origin=Strip+District,+Pittsburgh&destination=Coop+De+Ville,+2305+Smallman+St,+Pittsburgh,+PA+15222&waypoints=Wigle+Whiskey,+2401+Smallman+St,+Pittsburgh,+PA|Bar+Marco,+2216+Penn+Ave,+Pittsburgh,+PA|The+BeerHive,+2117+Penn+Ave,+Pittsburgh,+PA|Mullaney%27s+Harp+%26+Fiddle,+2329+Penn+Ave,+Pittsburgh,+PA&travelmode=walking";
 
 // Filters
 const shownEl = document.getElementById("shown");
